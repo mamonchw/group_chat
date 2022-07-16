@@ -12,6 +12,7 @@ class Notifi extends StatefulWidget {
 }
 
 class _NotifiState extends State<Notifi> {
+  bool isLoading = false;
   @override
   void initState() {
     // TODO: implement initState
@@ -44,6 +45,7 @@ class _NotifiState extends State<Notifi> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
     final Stream<QuerySnapshot> _notifications = FirebaseFirestore.instance
         .collection('notifications')
         .orderBy('time', descending: true)
@@ -76,41 +78,57 @@ class _NotifiState extends State<Notifi> {
                       document.data()! as Map<String, dynamic>;
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      //String uid=data['id'];
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => NotiDes(
-                              title: data['title'],
-                              des: data['des'],
+                    child: isLoading
+                        ? Center(
+                            child: Container(
+                              height: size.height / 20,
+                              width: size.height / 20,
+                              child: CircularProgressIndicator(),
                             ),
+                          )
+                        : ListTile(
+                            onTap: () {
+                              setState(() {
+                                isLoading = true;
+                              });
+                              String title = data['title'].toString();
+                              String des = data['des'].toString();
+                              print(data['title']);
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => NotiDes(
+                                    title: title,
+                                    des: des,
+                                  ),
+                                ),
+                              );
+                              setState(() {
+                                isLoading = false;
+                              });
+                              print(data['id']);
+
+                              setStatus(true, data['id']);
+
+                              //   ),
+                              // );
+                            },
+                            leading: Icon(Icons.reddit_outlined,
+                                color: (data['isSeen'] == "false")
+                                    ? Color.fromARGB(255, 66, 243, 80)
+                                    : Colors.blueGrey),
+                            title: Text(
+                              data['title'],
+                              style: TextStyle(
+                                color: (data['isSeen'] == "false")
+                                    ? Color.fromARGB(255, 66, 243, 80)
+                                    : Colors.black,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(data['des']),
+                            trailing: Icon(Icons.chat, color: Colors.black),
                           ),
-                        );
-                        print(data['id']);
-
-                        setStatus(true, data['id']);
-
-                        //   ),
-                        // );
-                      },
-                      leading: Icon(Icons.reddit_outlined,
-                          color: (data['isSeen'] == "false")
-                              ? Color.fromARGB(255, 66, 243, 80)
-                              : Colors.blueGrey),
-                      title: Text(
-                        data['title'],
-                        style: TextStyle(
-                          color: (data['isSeen'] == "false")
-                              ? Color.fromARGB(255, 66, 243, 80)
-                              : Colors.black,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      subtitle: Text(data['des']),
-                      trailing: Icon(Icons.chat, color: Colors.black),
-                    ),
                   );
                 }).toList(),
               );
